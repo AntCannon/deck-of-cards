@@ -13,4 +13,8 @@ class Deck(
     fun addCard(card: Card) {
         cards.add(card)
     }
+
+    fun shuffleDeck() {
+        cards.shuffle()
+    }
 }

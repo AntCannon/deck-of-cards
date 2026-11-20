@@ -4,6 +4,9 @@ fun main() {
     println("Beginning deck production...")
     val decks = createDecks(options)
     println("${decks.size} deck(s) created!")
+    println("Viewing Deck")
+    viewCards(decks[0])
+
 }
 
 fun viewDecks(decks: List<Deck>, showCards: Boolean  = false) {
