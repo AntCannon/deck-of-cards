@@ -1,5 +1,5 @@
 data class DeckOptions(
     val addJokers: Boolean = false,
-    val shuffleDeck: Boolean = true,
+    val shuffleDeck: Boolean = false,
     val numberOfDecks: Int = 1,
 )
