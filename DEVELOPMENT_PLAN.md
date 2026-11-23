@@ -2,7 +2,67 @@
 
 This is a learning roadmap: steps, milestones, and completion goals rather than implementation instructions or finished code. Build each small feature alongside a simple mobile interface, using placeholder visuals until the gameplay works.
 
+## November 23, 2026 — Decisions and implementation review
+
+Read alongside [the chat update](resourceDocs/waRPG_Chat_Update_2026-11-23.md), [Features and Definitions](FEATURES.md), [the original concept](WARPG_CONCEPT.md), the README, and the questions/answers preserved on the planning branch. The update was supplied under `resourceDocs/waRPG_Chat_Update_2026-11-23.md`.
+
+This dated section is the current planning guidance. Earlier requirements, inline answers, and milestone descriptions remain below as history. Confirmed new decisions refine the scope; illustrative code and suggested architecture in the update are not implementation commitments. Only this plan is being edited; no application changes are authorized by this review.
+
+### Confirmed release direction
+
+| Release | Scope | Planning consequence |
+| --- | --- | --- |
+| WarPG I | Offline, single-player Android idle RPG for learning Kotlin and releasing a manageable game. XP, mini-games, battles, idle progression, and local state/saves. No premium currency or required online server. | Build small mechanics and an Android UI with local persistence. Keep the basic deck playground as the first milestone, not the complete release. |
+| WarPG II | Online, single-player idle RPG with storyline, deeper progression, and premium currency. | Preserve these ideas for a later release. Accounts, server authority, and server persistence are likely needs, not current implementation tasks. |
+| WarPG PvP | A separate competitive experience with its own balance and rules; matchmaking is a major consideration. | Reuse suitable mechanics later without assuming single-player battle rules, skills, or progression are fair for PvP. |
+
+Separate card/state mechanics from game-mode rules. A future rules interface, server framework, shared core module, transaction identifiers, or state versions are proposals rather than immediate requirements. Start with packages when organization becomes useful; separate Gradle modules only when justified. Do not replace existing classes or introduce a large architecture change without a separate discussion.
+
+### Reconciliation with earlier requirements
+
+- **Android and iOS:** WarPG I is now explicitly Android-only. Preserve the earlier iOS interest as a deferred possibility outside this release; do not schedule iOS work after every milestone for WarPG I.
+- **Economy and progression:** Premium currency is excluded from WarPG I and retained for WarPG II. Regular currency, power-ups, player/card/suit progression, talents, point spending, and respec ideas remain recorded, but their scope and formulas are not all first-release commitments. Card levels still do not increase base War value; future buffs/debuffs are a separate concept.
+- **Placeholder UI:** Keep the earlier request to build features alongside a basic mobile UI. The update's suggestion to put Android UI last is not a confirmed reversal. Start the single-deck playground after a safe movement foundation, then extend it with each playable feature.
+- **Piles:** The earlier explicit choice remains: container type `PILE`, with `HAND`, `DISCARD`, and `STANDARD` pile classifications. The update's statement that hand classification was open does not undo that decision. No pile subclasses are needed just for classification.
+- **Shoe:** Its definition as a collection of decks remains, but the user's later decision to defer it still applies. It is not a prerequisite for the next movement milestone.
+- **History:** Full history, including returns, remains required. The update additionally raises recording shuffles and shifts as possible history events; this scope is unresolved. Internal reordering must not be mislabeled as leaving a container.
+- **First screen versus battle session:** One deck remains the first playground screen's scope. A later two-deck session is a suggested exercise for gameplay, not a change to that starting UI.
+- **Existing action definitions:** Do not collapse view/show/flip/play, deck deletion, pile discard, and card discard into one meaning. War rules, custom decks, special jokers, suit/rank-removal effects, and progression balance remain future or unresolved as previously recorded.
+
+### Current implementation, inspected November 23
+
+| Area | What exists | Remaining limitation |
+| --- | --- | --- |
+| Card identity and origin | `Card.kt` has a generated UUID and immutable nullable `originContainerId`. `DeckFactory.kt` assigns origin to standard cards and both jokers. Standalone random cards have no origin. | Supplied IDs and data-class copies can reuse identity; valid rank/suit combinations are not enforced by the constructor. |
+| Containers | `CardContainer`, `Deck`, and `Pile` expose identity, names, fixed broad type, read-only card access, computed count, draw/add/shuffle/shift actions, and removal lists. Piles have the three agreed classifications. | Read-only views reflect live changes. Public add/draw methods can bypass a future manager; adding the same card more than once is currently permitted. |
+| Factories | Standard 52/54-card decks, multiple-deck creation, optional shuffle, random standalone card creation, and empty named pile creation. | The pile factory always uses the default `STANDARD` type; callers can explicitly choose another type through the `Pile` constructor. |
+| Movement | `Manager.kt` contains a top-level function that moves the first card between containers. Empty sources and matching container IDs are rejected before mutation. | It is not a state-owning manager. It has no registry, selected-card request, position validation, uniqueness checks, location queries, or full movement records. |
+| Removal and reorder | Both draw implementations append to `removedCards`; shifts rotate the first card to the end without recording a removal. Empty draw/shift operations reject the action. | Departure lists do not identify destinations, record arrivals/returns, or establish a global sequence. They are not full history or current-location data. |
+| Presentation | `ViewOptions` and console functions respect the display flags and forward card settings; `viewCards` accepts any `CardContainer`. `Main` demonstrates shifting. | Console-only. No Android module, game session, battle loop, XP, saves, or idle system exists. |
+
+**Primary correctness gap for the new requirement:** `moveCard` mutates the source and its removal list before adding to the destination. If a destination implementation rejects the addition, the prior state is not restored. Current concrete `addCard` methods simply append, so ordinary transfers work, but the interface and sequence do not provide the agreed all-or-nothing guarantee.
+
+**Default-setting discrepancy:** The code currently creates 52-card decks with shuffling enabled. Earlier notes requested shuffle disabled for now. Preserve that earlier decision and flag the mismatch rather than silently changing code or treating the current default as a new product decision. Joker inclusion remains configurable.
+
+**Verification:** `./gradlew compileKotlin test --offline` succeeded on November 23. The test task reported `NO-SOURCE`; compilation is verified, but movement invariants have no automated coverage. No runtime scenario tests were added or run in this review. Older implementation-status statements below and in the other documents are historical snapshots, not evidence that newly implemented features are absent.
+
+### Proposed next development steps, grounded in that review
+
+1. **Settle the smallest transaction boundary.** Start with one successful card transfer and define its source, destination, selected card, and ordering rules. Keep origin and current location separate. Decide the reorder-history scope before extending beyond transfers.
+2. **Establish state ownership and registration.** Plan a central movement manager and a registry of containers with unique IDs. Prefer authoritative container contents and derived location/position queries initially; a separate location index is optional and must never diverge from contents. Discuss how this ownership fits the existing classes before refactoring them.
+3. **Define immutable movement records and clear outcomes.** Preserve the card ID, source/destination IDs, and movement order. Positions, timestamps, movement IDs, and typed success/failure models are useful proposals, not mandatory copies of the update's snippets. Records describe completed actions; failed requests are not successful movements.
+4. **Make a transfer all-or-nothing.** Validate, stage independent proposed state, check uniqueness and consistency, then publish the complete accepted state including history once. On failure, discard staged changes and preserve contents, positions, removal logs, and history. Avoid shallow copies that still share mutable collections. A result object alone does not provide atomicity, nor does staging followed by several separate live mutations.
+5. **Verify before expanding.** Check a complete deck → hand → discard → original deck cycle; stable IDs/origin; one location per card; matching history sequence and positions if recorded; empty/missing source; missing destination/card; duplicate IDs; invalid positions; same-container rejection; and simulated destination rejection. Each failure must preserve the exact prior state and history. Keep existing draw/shuffle/shift behavior deliberate, including whether direct mutation remains available outside manager-owned sessions.
+6. **Add inspection to the placeholder UI.** Introduce the single-deck Android playground with readable placeholder cards, pile counts, movement feedback, and a simple history view if useful. Keep state changes in the core rather than the screen. Start with local, single-threaded ownership; no networking is required.
+7. **Expand WarPG I in small playable increments.** Define a simple session, then a basic War ruleset and battle loop, then one XP reward. Add local saving/restoring before one idle activity. Introduce mini-games and further progression incrementally, with UI alongside each feature. An entire multi-card battle action should eventually succeed or fail as one transaction when its rules require it.
+
+**Next milestone:** A successful deck → hand → discard → deck cycle produces three ordered transfer records for the same card, with unchanged origin and an accurate current location. An intentionally rejected transfer leaves every container and all history unchanged. This extends the original first-movement milestone; it does not require a shoe, server, talent tree, or PvP system.
+
+**Only current decisions to resolve:** Does history include every shift/shuffle as a distinct reorder action, and may a return target a different deck? Keep broader monetization, server, and competitive-design questions deferred.
+
 ## Current milestone: card movement foundation
+
+The original order below is preserved. The November 23 review above supplies current status and the next sequence; in particular, shoe work is deferred and atomic movement is now explicit.
 
 Implement the supporting models and deck manager before further card interactions. Keep this a learning exercise: the steps below describe logical goals, not code or implementation instructions.
 
