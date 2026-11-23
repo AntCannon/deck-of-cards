@@ -1,24 +1,11 @@
 fun main() {
-    val options = DeckOptions()
+    message("creating deck(s)")
+    val initialDeckContainer = createDecks()[0]
+    val initialDeck = initialDeckContainer.cards
+    message("Decks created")
 
-    println("Beginning deck production...")
-    val decks = createDecks(options)
-    println("${decks.size} deck(s) created!")
-}
-
-fun viewDecks(decks: List<Deck>, showCards: Boolean  = false) {
-    decks.forEach { deck ->
-        println("Deck Id: ${deck.deckId}")
-        println("Card count: ${deck.getCards().size}")
-
-        if (showCards) {
-            viewCards(deck)
-        }
-    }
-}
-
-fun viewCards(deck: Deck) {
-    deck.getCards().forEachIndexed { index, card ->
-        println("Card #${index +1}: ${card.cardCode}")
-    }
+    message("shift top to bottom")
+    viewCard(initialDeck.first())
+    initialDeckContainer.shiftTopCardToBottom()
+    viewCard(initialDeck.last())
 }

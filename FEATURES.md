@@ -6,12 +6,14 @@ This document consolidates the game concept, development-plan responses, running
 
 ## Product scope
 
-- **Confirmed:** Build a basic mobile deck playground first, using placeholder visuals and adding one feature at a time.
-- **Confirmed:** Android first, followed by iOS work after major milestones.
+- **Confirmed:** WarPG I is an offline, single-player Android idle RPG with local state and saves. It does not require a server or premium currency.
+- **Confirmed:** Build a basic Android deck playground first, using placeholder visuals and adding one feature at a time. The playground is the first milestone, not the complete WarPG I release.
+- **Deferred:** iOS is outside the WarPG I schedule and may be reconsidered after the Android release.
 - **Confirmed:** The first screen manages one deck. The underlying model can support multiple decks.
-- **Confirmed:** Establish the deck manager, shoe, and piles before adding further card interactions.
-- **Confirmed:** Game mechanics are outside the initial build.
-- **Future:** War / I Declare War gameplay with RPG and idle progression.
+- **Confirmed:** Establish safe card movement, piles, state ownership, and movement history before adding further card interactions. Shoe implementation is deferred.
+- **Confirmed:** Game mechanics are outside the initial deck-playground milestone but are part of the planned WarPG I release.
+- **Confirmed for WarPG I:** Add War / I Declare War gameplay, XP, mini-games, battles, idle progression, and local saving incrementally after the foundation.
+- **Future:** WarPG II is an online, single-player game with deeper progression, storyline, and premium currency. PvP is a separate future experience.
 - **Future:** Short activities lasting a few minutes and longer activities, with both and idle activities contributing to overall progress.
 - **Confirmed learning approach:** Explore mechanics through small standalone exercises before integration.
 
@@ -60,18 +62,18 @@ The UI can display updated snapshots or another suitable representation of curre
 | No deck | Support a state in which no deck exists. | Confirmed; no mobile UI yet |
 | Create/get a deck | Obtain a deck; standard deck creation supports optional jokers and multiple decks. Other acquisition methods are undefined. | Creation implemented |
 | Shuffle a deck | Reorder the cards currently in that deck. | Implemented |
-| Default shuffle | New decks should use `false` for shuffle for now, per the latest response. | Confirmed choice; code still defaults to `true` |
-| Draw a card | Take a card from a deck; draw position and empty-deck behavior remain undefined. | Confirmed; not implemented |
-| Return a card | Put a card back into a deck; destination restrictions and insertion position remain undefined. | Confirmed; not implemented |
+| Default shuffle | New decks use `false` for shuffle for now, while callers may explicitly enable it. | Implemented |
+| Draw a card | Take the first card from a deck and record the departure; an empty draw is rejected. | Basic behavior implemented; complete manager-owned history is not implemented |
+| Return a card | Put a card back into a deck; destination restrictions and insertion position remain undefined. | A basic transfer can target a deck; return rules and atomic history are not implemented |
 | Delete a deck | Remove a deck; treatment of cards outside it remains undefined. | Confirmed; not implemented |
-| Create a pile | Create a collection of cards that can be named. | Confirmed; not implemented |
-| Player's hand | Represent a player's hand as a pile. | Confirmed; not implemented |
-| Discard pile | Represent discarded cards as a pile. | Confirmed; not implemented |
-| Transfer to/from a pile | Move a card into or out of a pile. | Confirmed; not implemented |
+| Create a pile | Create a named collection of cards. | Implemented; the factory currently creates the default `STANDARD` type |
+| Player's hand | Represent a player's hand as a `HAND` pile. | Model implemented through `PileType`; no session or UI uses it yet |
+| Discard pile | Represent discarded cards as a `DISCARD` pile. | Model implemented through `PileType`; no session or UI uses it yet |
+| Transfer to/from a pile | Move a card into or out of a pile. | Basic first-card transfer implemented; it is sequential, not atomic |
 | Discard a pile | A requested action whose effect on the pile and its contents is not yet defined. | Confirmed action; semantics unresolved |
-| Shoe | Group decks in a shoe. | Confirmed; not implemented |
-| Deck manager | Manage the shoe, decks, piles, and cards. | Confirmed; not implemented |
-| Track removed cards | Identify cards removed from a particular deck. | Confirmed; not implemented |
+| Shoe | Group decks in a shoe. | Confirmed definition; implementation deferred |
+| Deck manager | Manage registered containers, cards, transfers, and history. | Only a top-level transfer function exists; no state-owning manager or registry exists |
+| Track removed cards | Identify cards removed from a particular deck. | Per-container departure lists exist; they are not full history or current-location data |
 | Full movement history | Preserve completed card movements, including returns, separately from current location. | Confirmed requirement; implementation is part of the current foundation milestone |
 
 Naming a pile is required; unique names, renaming, pile ordering, and capacity limits have not been specified. Shoe dealing, cross-deck shuffling, and shoe capacity are not implied by the definition of a shoe.
@@ -159,32 +161,32 @@ Suit themes, skill effects, tree structure, costs, and the distinction between s
 
 ## Future economy, power-ups, and time
 
-- Regular currency and premium currency.
-- Power-ups.
-- Time-based activities and idle progression.
+- **WarPG I:** Time-based activities and idle progression are confirmed release goals. Regular currency and power-ups remain recorded ideas whose exact first-release scope and rules are unresolved.
+- **WarPG II:** Premium currency is reserved for the later online release.
 - Progress from short sessions, long sessions, and idle activities contributes to overall advancement.
 
-Currency sources and sinks, monetization, power-up effects and duration, timers, offline calculations, and balance remain undefined. Premium currency does not by itself specify purchases or a monetization model.
+Currency sources and sinks, power-up effects and duration, timers, offline calculations, and balance remain undefined. WarPG I has no premium currency or required monetization design.
 
 **Proposed supporting feature:** Save progress locally before exploring offline rewards. Saved fields, active-match saving, reward claims, clock-change behavior, and offline limits have not been agreed. Cloud accounts and online features are not initial requirements.
 
 ## Current build order
 
-1. Establish definitions and responsibilities for the deck manager, shoe, and piles.
-2. Establish individual card identity, location, origin, and full movement history, including returns.
-3. Build the supporting models before further card interactions.
-4. Expose the foundation through the single-deck Android playground with placeholders.
-5. Add basic card actions and verify transfers and removed-card tracking together.
-6. Explore gameplay and progression only after the basic deck playground works.
+1. Establish baseline automated checks for deck creation, identity, origin, optional shuffle behavior, and existing reorder behavior.
+2. Define the smallest selected-card transfer request, immutable completed-movement record, and explicit success/failure outcomes.
+3. Decide how a central manager registers containers and owns authoritative state before replacing or restricting the existing container mutation methods.
+4. Implement all-or-nothing movement and derive current location from authoritative container contents.
+5. Verify deck to hand to discard to deck movement, stable identity/origin, card conservation, ordered history, and unchanged state after every rejected transfer.
+6. Expose the verified foundation through the single-deck Android playground with placeholders.
+7. Add a basic War session, one XP reward, local saving, and one idle activity as separate playable increments.
 
-This updates the earlier plan's ordering: piles and the manager are foundational work, rather than additions after drawing and returning cards. It also brings individual-card identity forward for tracking instead of postponing it solely until progression.
+Shoe, iOS, online infrastructure, premium currency, and PvP remain outside the current milestone.
 
 The detailed logical implementation order and first movement milestone are in the [development plan](DEVELOPMENT_PLAN.md#current-milestone-card-movement-foundation).
 
 ## Related documents
 
 - [Development plan](DEVELOPMENT_PLAN.md): the current logical implementation order, followed by the earlier learning roadmap and preserved responses.
-- [Questions and decisions](https://github.com/AntCannon/deck-of-cards/blob/feature/ac/deck-shuffle-and-mobile-plan/DEVELOPMENT_QUESTIONS.md): your responses and explanations on the planning branch; the answered Q1/Q2 establish disabled default shuffle and one deck on the first screen.
+- [November 23 chat update](resourceDocs/waRPG_Chat_Update_2026-11-23.md): preserved discussion, confirmed release direction, and illustrative architecture examples.
 - [Game concept log](WARPG_CONCEPT.md): original game concept and longer-term mechanics.
 
-This feature document records the latest requirements without changing application code. Implementation status refers to the reviewed `feature/ac/deck-shuffle-and-mobile-plan` branch, whose shuffle and planning changes are not yet on `main`. No new build or test was run.
+Implementation status in this document reflects the inspected `feature/ac/card-pile-shoe-classes` branch on November 23, 2026. The current source compiles; Gradle reports `test NO-SOURCE`, so behavioral verification is still required.
