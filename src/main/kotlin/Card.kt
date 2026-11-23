@@ -4,7 +4,8 @@ import java.util.UUID
 data class Card(
     val cardId: String = UUID.randomUUID().toString(),
     val rank: Rank,
-    val suit: Suit? = null
+    val suit: Suit? = null,
+    val originContainerId: String? = null,
 ) {
     val cardCode: String
         get() = rank.rankCode + (suit?.suitCode ?: "")

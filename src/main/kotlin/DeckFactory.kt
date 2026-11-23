@@ -16,8 +16,8 @@ fun createDecks(
             for (rank in Rank.standardRanks) {
                 val card = Card(
                     rank = rank,
-                    suit = suit
-//                    parentDeck = deck,
+                    suit = suit,
+                    originContainerId = deck.containerId
                 )
 
                 deck.addCard(card)
@@ -25,8 +25,10 @@ fun createDecks(
         }
 
         if (deckOptions.addJokers) {
-            deck.addCard(Card(rank = Rank.LITTLE_JOKER))
-            deck.addCard(Card(rank = Rank.BIG_JOKER))
+            deck.addCard(Card(rank = Rank.LITTLE_JOKER,
+                originContainerId = deck.containerId))
+            deck.addCard(Card(rank = Rank.BIG_JOKER,
+                originContainerId = deck.containerId))
         }
 
         if (deckOptions.shuffleDeck) {
