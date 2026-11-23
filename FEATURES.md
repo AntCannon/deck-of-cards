@@ -27,6 +27,7 @@ This document consolidates the game concept, development-plan responses, running
 | Shoe | A collection of decks. | Confirmed |
 | Deck manager | Manages the shoe, decks, piles, and cards. | Confirmed |
 | Removed-card tracking | The ability to identify which cards have been removed from a deck, rather than only knowing how many remain. | Confirmed |
+| Full movement history | A record of each completed card movement, including removals, moves between piles, and returns. Returning a card does not erase earlier records. | Confirmed |
 
 “Set of cards” and “set of decks” describe collections here; they do not select a Kotlin collection type or decide ordering and uniqueness rules. Two cards from different decks can have the same rank and suit, so they must not accidentally become indistinguishable when tracking their removal.
 
@@ -34,7 +35,7 @@ The shoe groups decks; piles group cards. A pile is not automatically a new deck
 
 ## Deck manager and state
 
-**Confirmed responsibilities:** Manage the shoe, decks, piles, and cards. Support the requirement to know which cards have been removed from each deck.
+**Confirmed responsibilities:** Manage the shoe, decks, piles, and cards. Support the requirement to know which cards have been removed from each deck and retain their full movement history, including returns.
 
 **Confirmed state behavior:** Actions affect the current live deck, and the player should see the current state after each action. Callers should change state through controlled methods rather than freely editing the underlying collection.
 
@@ -71,14 +72,21 @@ The UI can display updated snapshots or another suitable representation of curre
 | Shoe | Group decks in a shoe. | Confirmed; not implemented |
 | Deck manager | Manage the shoe, decks, piles, and cards. | Confirmed; not implemented |
 | Track removed cards | Identify cards removed from a particular deck. | Confirmed; not implemented |
+| Full movement history | Preserve completed card movements, including returns, separately from current location. | Confirmed requirement; implementation is part of the current foundation milestone |
 
 Naming a pile is required; unique names, renaming, pile ordering, and capacity limits have not been specified. Shoe dealing, cross-deck shuffling, and shoe capacity are not implied by the definition of a shoe.
 
-## Removed-card tracking
+## Removed-card tracking and full movement history
 
 **Required outcome:** For a deck, determine which cards have been removed. A remaining-card count alone does not satisfy this requirement.
 
+**Confirmed decision:** Keep full movement history, not only a list of cards currently outside a deck. Record completed movements in order, including removals from decks, transfers between piles, and returns. Returning a card must not delete its earlier movement records.
+
+The history should distinguish the individual card and its source and destination for each completed move. Current location answers where the card is now; history answers how it moved. An invalid move must leave card locations unchanged and must not appear as a completed movement.
+
 For example, after taking the five of hearts from deck A, the system must be able to identify that card as removed from deck A. A five of hearts in deck B must not be confused with that copy.
+
+If that card moves from deck A to a player's hand, then to the discard pile, then back to deck A, all three movements remain in its history. It is no longer currently outside deck A, but its earlier removal remains visible in the history.
 
 **Proposed supporting concepts:**
 
@@ -89,12 +97,9 @@ For example, after taking the five of hearts from deck A, the system must be abl
 
 These are proposed ways to support the requirement, not a chosen storage design. Tracking a card's source does not mean it is still physically present in that deck.
 
-**Current milestone decisions still needed:**
+**Current milestone decision still needed:** When a removed card is returned, must it return to its original deck, or may it join another deck?
 
-1. Does “removed” mean cards currently outside the deck, a history of every removal even after return, or both?
-2. When a removed card is returned, must it return to its original deck, or may it join another deck?
-
-These decisions affect tracking behavior. A permanent event history, timestamps, and an audit UI are not assumed requirements.
+Full history is confirmed; its storage design, persistence across app restarts, retention scope, timestamps, and a dedicated history UI have not been specified.
 
 ## Card presentation and actions
 
@@ -166,7 +171,7 @@ Currency sources and sinks, monetization, power-up effects and duration, timers,
 ## Current build order
 
 1. Establish definitions and responsibilities for the deck manager, shoe, and piles.
-2. Settle removed-card tracking semantics and how individual copies are distinguished.
+2. Establish individual card identity, location, origin, and full movement history, including returns.
 3. Build the supporting models before further card interactions.
 4. Expose the foundation through the single-deck Android playground with placeholders.
 5. Add basic card actions and verify transfers and removed-card tracking together.
@@ -174,9 +179,11 @@ Currency sources and sinks, monetization, power-up effects and duration, timers,
 
 This updates the earlier plan's ordering: piles and the manager are foundational work, rather than additions after drawing and returning cards. It also brings individual-card identity forward for tracking instead of postponing it solely until progression.
 
+The detailed logical implementation order and first movement milestone are in the [development plan](DEVELOPMENT_PLAN.md#current-milestone-card-movement-foundation).
+
 ## Related documents
 
-- [Development plan](https://github.com/AntCannon/deck-of-cards/blob/feature/ac/deck-shuffle-and-mobile-plan/DEVELOPMENT_PLAN.md): general learning roadmap on the planning branch; the build order above reflects the latest prerequisite decision.
+- [Development plan](DEVELOPMENT_PLAN.md): the current logical implementation order, followed by the earlier learning roadmap and preserved responses.
 - [Questions and decisions](https://github.com/AntCannon/deck-of-cards/blob/feature/ac/deck-shuffle-and-mobile-plan/DEVELOPMENT_QUESTIONS.md): your responses and explanations on the planning branch; the answered Q1/Q2 establish disabled default shuffle and one deck on the first screen.
 - [Game concept log](WARPG_CONCEPT.md): original game concept and longer-term mechanics.
 
