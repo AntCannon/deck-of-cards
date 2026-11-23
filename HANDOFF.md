@@ -10,8 +10,8 @@ Read [AGENTS.md](AGENTS.md). The user implements the code and wants focused revi
 
 - Repository: `https://github.com/AntCannon/deck-of-cards.git`.
 - Active branch at this checkpoint: `feature/ac/card-pile-shoe-classes`, tracking the matching origin branch.
-- Origin updates in `Card.kt` and `DeckFactory.kt` are committed as `8359837`. Earlier commits on that branch: `79aa54e` (containers/display), `ca519c5` (transfers/factories), and `5182703` (earlier documentation).
-- This documentation commit includes the November 23 development-plan update, the `resourceDocs/` chat update, `AGENTS.md`, and this handoff. The user has requested committing and pushing all of these changes.
+- The latest application-code update is `c894bf7`, which disables automatic deck shuffling by default. `8359837` assigns origin containers to standard cards and jokers; earlier feature commits include `79aa54e` (containers/display) and `ca519c5` (transfers/factories).
+- `a17e5c4` added the November 23 release decisions, chat update, repository guidance, and cross-computer handoff. The later documentation reconciliation refreshes the README and current feature status without changing application code.
 - Verify the feature branch's remote state before switching computers. Do not assume `main` contains the feature implementation; use the feature branch and its latest documentation commit.
 - The user's earlier documentation changes were separately pushed to `main`; do not reset either branch or discard local changes to reconcile history.
 
@@ -36,7 +36,7 @@ No state-owning manager, registry, movement record/history model, current-locati
 1. **Movement is sequential, not atomic.** `Manager.kt` changes the source and removal list before adding to the target. If a target rejects the addition, prior state is not restored. Existing concrete add methods simply append, but the interface does not guarantee success.
 2. **Duplicate identity/membership is possible.** Public `addCard` methods do not reject duplicate card IDs or enforce one live container per card. Direct mutation methods can bypass a future manager. UUID defaults alone do not prevent supplied or copied IDs from being reused.
 3. **Removal lists are not full history.** They lack destinations, arrival/return events, and a global movement sequence. They are not a reliable current-location index.
-4. **Defaults disagree with an earlier answer.** Current deck defaults are no jokers and shuffle enabled. The earlier user answer requested shuffle disabled for now. Flag the discrepancy; do not silently change it during review.
+4. **Automated behavior checks are absent.** The project compiles, but Gradle reports `test NO-SOURCE`. Deck creation, identity/origin, reordering, and movement invariants are not protected by tests.
 
 The card-origin gap was fixed in commit `8359837`: both jokers now receive the deck origin, and the property is named `originContainerId`. Do not repeat that resolved finding without checking for a regression.
 
@@ -44,12 +44,13 @@ The card-origin gap was fixed in commit `8359837`: both jokers now receive the d
 
 The next task is planning/learning about **atomic card movement with complete transfer history**, guided by the user's next request. Use the detailed November 23 section of [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md).
 
-1. Define the smallest transfer request and its validation rules.
-2. Decide how a central manager owns/registers containers and authoritative state, fitting the existing classes before any refactor.
+1. Add baseline tests for deck creation, UUIDs, origins, optional shuffle behavior, and current reorder behavior.
+2. Define the smallest selected-card transfer request and its validation rules.
 3. Define immutable records for completed transfers and clear success/failure outcomes. Record card/source/destination IDs and ordering; exact types and optional timestamps/positions are still design choices.
-4. Stage independent changes, validate invariants, and publish the whole accepted state including history once. Failed operations preserve contents, positions, removal logs, and history. Avoid shallow copies sharing mutable collections and staged changes followed by separate live mutations.
-5. Derive current location from authoritative contents initially. Add an index only if useful and kept consistent.
-6. Verify the success and failure cases, then introduce the single-deck Android playground with placeholder UI.
+4. Decide how a central manager owns/registers containers and authoritative state, fitting the existing classes before any refactor.
+5. Stage independent changes, validate invariants, and publish the whole accepted state including history once. Failed operations preserve contents, positions, removal logs, and history. Avoid shallow copies sharing mutable collections and staged changes followed by separate live mutations.
+6. Derive current location from authoritative contents initially. Add an index only if useful and kept consistent.
+7. Verify the success and failure cases, then introduce the single-deck Android playground with placeholder UI.
 
 **Completion example:** deck → hand → discard → original deck yields three ordered transfers for one card ID, unchanged origin, and accurate current location. An intentionally rejected transfer changes nothing. Check duplicates, empty/missing sources, missing destination/card, invalid positions if supported, same-container requests, and destination rejection.
 
@@ -66,7 +67,7 @@ The next task is planning/learning about **atomic card movement with complete tr
 
 ## Validation and references
 
-Last check on November 23: `./gradlew compileKotlin test --offline` succeeded. Tests reported `NO-SOURCE`: no automated tests exist. No runtime scenario checks were performed during that review. The development-plan update was documentation-only.
+Latest check on November 23: `./gradlew compileKotlin test --offline` succeeded on the current feature branch. Tests reported `NO-SOURCE`: no automated tests exist. No runtime scenario checks were performed during the documentation review.
 
 Read in this order:
 

@@ -42,7 +42,7 @@ Separate card/state mechanics from game-mode rules. A future rules interface, se
 
 **Primary correctness gap for the new requirement:** `moveCard` mutates the source and its removal list before adding to the destination. If a destination implementation rejects the addition, the prior state is not restored. Current concrete `addCard` methods simply append, so ordinary transfers work, but the interface and sequence do not provide the agreed all-or-nothing guarantee.
 
-**Default-setting discrepancy:** The code currently creates 52-card decks with shuffling enabled. Earlier notes requested shuffle disabled for now. Preserve that earlier decision and flag the mismatch rather than silently changing code or treating the current default as a new product decision. Joker inclusion remains configurable.
+**Default setting:** The post-review update now creates 52-card decks with shuffling disabled by default, matching the confirmed decision. Callers can still explicitly enable shuffling, and joker inclusion remains configurable.
 
 **Verification:** `./gradlew compileKotlin test --offline` succeeded on November 23. The test task reported `NO-SOURCE`; compilation is verified, but movement invariants have no automated coverage. No runtime scenario tests were added or run in this review. Older implementation-status statements below and in the other documents are historical snapshots, not evidence that newly implemented features are absent.
 
