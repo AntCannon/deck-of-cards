@@ -1,5 +1,8 @@
+import java.util.UUID
+
 //  create card class
 data class Card(
+    val cardId: String = UUID.randomUUID().toString(),
     val rank: Rank,
     val suit: Suit? = null
 ) {

@@ -1,19 +1,22 @@
-fun createDecks(options: DeckOptions = DeckOptions()): List<Deck> {
-    require(options.numberOfDecks > 0) {
+fun createDecks(
+    deckOptions: DeckOptions = DeckOptions()
+): List<Deck> {
+
+    require(deckOptions.numberOfDecks > 0) {
         "numberOfDecks must be greater than zero"
     }
 
     val decks: MutableList<Deck> = mutableListOf()
 
-    var decksToCreate = options.numberOfDecks
+    var decksToCreate = deckOptions.numberOfDecks
     while (decksToCreate > 0) {
-        val deck = Deck()
+        val deck = Deck(containerName = "Deck ${decks.size + 1}")
         for (suit in Suit.entries) {
 
             for (rank in Rank.standardRanks) {
                 val card = Card(
-                    rank,
-                    suit
+                    rank = rank,
+                    suit = suit
 //                    parentDeck = deck,
                 )
 
@@ -21,9 +24,13 @@ fun createDecks(options: DeckOptions = DeckOptions()): List<Deck> {
             }
         }
 
-        if (options.addJokers) {
-            deck.addCard(Card(Rank.LITTLE_JOKER))
-            deck.addCard(Card(Rank.BIG_JOKER))
+        if (deckOptions.addJokers) {
+            deck.addCard(Card(rank = Rank.LITTLE_JOKER))
+            deck.addCard(Card(rank = Rank.BIG_JOKER))
+        }
+
+        if (deckOptions.shuffleDeck) {
+            deck.shuffle()
         }
 
         decks.add(deck)
